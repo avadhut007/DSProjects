@@ -3,8 +3,6 @@ import os
 import pickle
 
 
-# use header to keep stream open when sending file in multiple packets
-header_size = 6
 packet_size = 1024
 server_dir_path = './server-directory'
 header = "!header!"

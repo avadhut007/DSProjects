@@ -1,10 +1,9 @@
 import socket
 import os
 import pickle
+import threading
+from datetime import datetime
 
-
-# use header to keep stream open when sending file in multiple packets
-header_size = 6
 packet_size = 1024
 server_dir_path = './server-directory'
 header = "!header!"
@@ -16,12 +15,9 @@ server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # To resuse 
 server_socket.bind((socket.gethostname(),5432))
 server_socket.listen(5)
 
-while True:
-    client_socket, client_addr = server_socket.accept()
+def run_client(client_socket, client_addr):
     print(f'Server has connected with the client {client_addr}')
-
-
-    while True:
+    while True:        
 
         packet = client_socket.recv(packet_size).decode('utf-8')
         packet = packet.split(header)
@@ -47,7 +43,8 @@ while True:
                         break
                     
                     client_socket.send(data)
-        
+            print(f"{file_dw} downloaded successfully {datetime.now().time()}")
+
         elif function_name == 'upload_file':
             file_dw = packet[1]
             file_size = packet[2]
@@ -65,6 +62,7 @@ while True:
                         break
                     writer.write(data)
                     curr_size = curr_size + len(data)
+            print(f"{file_dw} uploaded successfully {datetime.now().time()}")
 
         elif function_name == 'delete_file':
             file_dw = packet[1]
@@ -73,8 +71,14 @@ while True:
         elif function_name == 'rename_file':
             file_dw = packet[1]
             file_new_name = packet[2]
-            os.rename(server_dir_path + '/' + file_dw, server_dir_path + '/' + file_new_name)
+            os.rename(server_dir_path + '/' + file_dw, server_dir_path + '/' + file_new_name)    
 
 
+while True:
+    client_socket, client_addr = server_socket.accept()
 
+    t1 = threading.Thread(target=run_client, args=[client_socket, client_addr])
+    t1.start()
 
+    print(f"New thread started. Total client threads are {threading.active_count()-1}")
+    

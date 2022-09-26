@@ -1,10 +1,8 @@
-from curses.ascii import isdigit
 import socket
 import os
 import pickle
 
 
-header_size = 6
 packet_size = 1024
 header = "!header!"
 
