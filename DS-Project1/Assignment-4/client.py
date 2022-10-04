@@ -67,11 +67,11 @@ async def asynchronous():
     print('Value of pi is : ', pi_value)
 
     print('Addition of two numbers')
-    i = int(input('Enter first number : '))
-    j = int(input('Enter second number : '))
+    first = int(input('Enter first number : '))
+    second = int(input('Enter second number : '))
 
     function_name = "add"
-    data = {"function_name": function_name,"first":i, "second":j}
+    data = {"function_name": function_name,"first":first, "second":second}
     data = pickle.dumps(data)
     client_socket.send(data)
     add_result = client_socket.recv(packet_size)
@@ -138,8 +138,8 @@ async def deffsync():
     print('Value of pi is : ', pi_value)
 
     print('Addition of two numbers ')
-    i = int(input('Enter the first number: '))
-    j = int(input('Enter the second number: '))
+    first = int(input('Enter the first number: '))
+    second = int(input('Enter the second number: '))
 
     print('Sorting an array ')
     arr = []
@@ -188,7 +188,7 @@ async def deffsync():
     task5 = asyncio.create_task(client_multi(matrix_A,matrix_B,Ra,Cb))
     task6 = asyncio.create_task(defsyncfunction())
 
-    task7 = asyncio.create_task(client_add(i,j))
+    task7 = asyncio.create_task(client_add(first,second))
     task8 = asyncio.create_task(defsyncfunction())
 
     await asyncio.sleep(2.2)
