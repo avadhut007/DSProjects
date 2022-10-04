@@ -24,4 +24,4 @@ python3 client.py
 
 4. Select options from list of instructions on the terminal. To select type the number of option and enter.
 
-5. In the end, select last option to close the client. Close the server as well.
+5. In the end, close the client and close the server as well.

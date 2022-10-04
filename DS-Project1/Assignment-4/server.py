@@ -9,6 +9,7 @@ packet_size = 1024
 #server_dir_path = './server-directory'
 #header = "!header!"
 
+hashmap = {}
 
 server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1) # To resuse the address if we rerun server
@@ -17,19 +18,25 @@ server_socket.bind((socket.gethostname(),9999))
 server_socket.listen(5)
 
 def calculate_pi():
-
-    return math.pi
+    res = math.pi
+    hashmap['calculate_pi'] = res
+    return res
 
 
 def asyadd(a,b):
-    return a+b
+    res = a+b
+    hashmap['add'] = res
+    return res
 
 def sort(arr1):
-    return sorted(arr1)
+    res = sorted(arr1)
+    hashmap['sort'] = res
+    return res
 
 def matrix_multiply(matrixA,matrixB):
 
     res = np.dot(matrixA,matrixB).tolist()
+    hashmap['matrix_multiply'] = res    
     return res
 
 while True:
