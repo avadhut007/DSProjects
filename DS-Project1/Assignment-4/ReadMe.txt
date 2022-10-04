@@ -9,6 +9,8 @@ Notes before running files
 - Install numpy library using pip
 pip3 install numpy
 
+- if you pressed enter instead of required value, you may need to restart the whole process.
+
 Steps:
 -------------------------------
 
