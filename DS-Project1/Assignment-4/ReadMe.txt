@@ -4,13 +4,15 @@ Notes before running files
 
 - Before starting the client, restart the server always.
 
+- Python3 version > 3.7  required
+
 - Install numpy library using pip
 pip3 install numpy
 
 Steps:
 -------------------------------
 
-1. Start two terminals and change directory to Assignment-3
+1. Start two terminals and change directory to Assignment-4
 
 2. Run server.py in the first terminal.
 python3 server.py
