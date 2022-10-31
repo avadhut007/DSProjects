@@ -29,19 +29,19 @@ class TotalOrderMultiCast:
         self.event_id = event_id
         self.logical_clock = 0
         self.event_queue = []
-        self.acknowledge_receive = defaultdict(list)
+        self.acknowledge_receive = defaultdict(set)
         self.events_sent = 0
+        self.communication_thread = None
+
+        self.delivery_thread = None
 
     def start_process(self):
         #print(f"This is Process: {self.pid}") 
-        communication_thread = threading.Thread(target=self.create_communication)
-        communication_thread.start()
+        self.communication_thread = threading.Thread(target=self.create_communication)
+        self.communication_thread.start()
         
-        order_thread = threading.Thread(target=self.create_order)
-        order_thread.start()
-
-        delivery_thread = threading.Thread(target=self.deliver_ack)
-        delivery_thread.start()
+        self.delivery_thread = threading.Thread(target=self.deliver_ack)
+        self.delivery_thread.start()
 
         time.sleep(4)
 
@@ -56,50 +56,42 @@ class TotalOrderMultiCast:
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((socket.gethostname(),self.port_num))
 
-        while self.events_sent != self.TOTAL_PROCESSES:
 
+        while self.events_sent != self.TOTAL_PROCESSES:
             data = server_socket.recvfrom(1024)[0]
             event = pickle.loads(data)
-            
-            manage_event_thread = threading.Thread(target=self.manage_events, args=[event])
-            manage_event_thread.start()
-            
-        
-        server_socket.close()
-        
 
-    def manage_events(self, event):
-        lock = threading.Lock()
-        lock.acquire()
-        if event.type_is_ack:
-            self.acknowledge_receive[event.eid].append(event.pid)
-        else:
-            heappush(self.event_queue,event)
-        lock.release()
-
-    def create_order(self):
-        #print("This is create order") 
-        while self.events_sent != self.TOTAL_PROCESSES:
+            lock = threading.Lock()
+            lock.acquire()
+            if event.type_is_ack:
+                self.acknowledge_receive[event.eid].add(event.pid)
+            else:
+                heappush(self.event_queue,event)
+            lock.release()
             if self.event_queue:
-                #print("creation",self.event_queue)
+                #print("creation",self.acknowledge_receive,"send event",self.events_sent)
                 event = self.event_queue[0]
                 if event.eid in self.acknowledge_receive:
                     if len(self.acknowledge_receive[event.eid]) == self.TOTAL_PROCESSES:
                         print(f"Current Process PID P{self.pid}: Processed event P{event.pid}.{event.eid}")
                         self.events_sent+=1
-                        heappop(self.event_queue)
+                        heappop(self.event_queue)            
+        
+        server_socket.close()
+        
 
     def deliver_ack(self):
         #print("This is deliver ack") 
         while self.events_sent != self.TOTAL_PROCESSES:
+            
             if self.event_queue:
-                #print("del",self.event_queue)
+                #print("del",self.acknowledge_receive,"send event",self.events_sent)
                 event = self.event_queue[0]
                 if self.check_ack_constraints(event):
                     AckTypeEvent = Event(self.logical_clock, self.pid, event.eid)
                     AckTypeEvent.type_is_ack = True
                     self.send_event(AckTypeEvent)
-                    self.acknowledge_receive[event.eid].append(event.pid)
+                    self.acknowledge_receive[event.eid].add(event.pid)
 
     def check_ack_constraints(self, event):
         if self.acknowledge_receive and event.eid in self.acknowledge_receive:
@@ -121,7 +113,7 @@ class TotalOrderMultiCast:
 
 
     def send_event(self, event):
-        print("clock",self.logical_clock)
+        #print("clock",self.logical_clock)
         if not event.type_is_ack:
             self.logical_clock+=1
         
@@ -131,4 +123,3 @@ class TotalOrderMultiCast:
             data = pickle.dumps(event)
             send_event_socket.sendto(data, (socket.gethostname(), port))
             send_event_socket.close()
-        
