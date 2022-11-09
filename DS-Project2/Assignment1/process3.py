@@ -1,5 +1,4 @@
 from asg1 import TotalOrderMultiCast
-import multiprocessing as mp
 
 
 if __name__ == "__main__":
@@ -7,9 +6,10 @@ if __name__ == "__main__":
     pid = 3
     port_num = 5430
     event_id = "E3"
+    event_id2 = "E33"
     print(f"This is process: {proces_name}")
 
-    lamport3 = TotalOrderMultiCast(pid,port_num,event_id)
+    lamport3 = TotalOrderMultiCast(pid, port_num, event_id, event_id2)
     lamport3.start_process()
 
     lamport3.communication_thread.join()
