@@ -5,6 +5,7 @@ from heapq import heappop, heappush
 from collections import defaultdict
 import time
 import pickle
+import random
 
 class Event:
     def __init__(self,logical_clock=0, pid=0, eid = '') -> None:
@@ -52,7 +53,7 @@ class TotalOrderMultiCast:
         self.send_event(firstEvent)
         self.is_my_event_exists_or_not_processed = True
 
-        time.sleep(1)
+        time.sleep(random.choice([1,2,3]))
 
         secondEvent = Event(self.logical_clock, self.pid, self.event_id2)
         secondEvent.type_is_ack = False
@@ -108,6 +109,7 @@ class TotalOrderMultiCast:
             try:
                 if self.event_queue:
                     #print("del",self.acknowledge_receive,"send event",self.events_sent)
+                    time.sleep(0.5)
                     event = self.event_queue[0]
                     if self.check_ack_constraints(event):
                         AckTypeEvent = Event(self.logical_clock, self.pid, event.eid)
