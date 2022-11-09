@@ -66,6 +66,8 @@ class TotalOrderMultiCast:
             if event.type_is_ack:
                 self.acknowledge_receive[event.eid].add(event.pid)
             else:
+                print(f"Timestamp of received msg {event.eid} is {event.logical_clock}")
+                self.logical_clock = max(self.logical_clock, event.logical_clock) + 1
                 heappush(self.event_queue,event)
             lock.release()
             if self.event_queue:
@@ -79,19 +81,20 @@ class TotalOrderMultiCast:
         
         server_socket.close()
         
-
     def deliver_ack(self):
         #print("This is deliver ack") 
         while self.events_sent != self.TOTAL_PROCESSES:
-            
-            if self.event_queue:
-                #print("del",self.acknowledge_receive,"send event",self.events_sent)
-                event = self.event_queue[0]
-                if self.check_ack_constraints(event):
-                    AckTypeEvent = Event(self.logical_clock, self.pid, event.eid)
-                    AckTypeEvent.type_is_ack = True
-                    self.send_event(AckTypeEvent)
-                    self.acknowledge_receive[event.eid].add(event.pid)
+            try:
+                if self.event_queue:
+                    #print("del",self.acknowledge_receive,"send event",self.events_sent)
+                    event = self.event_queue[0]
+                    if self.check_ack_constraints(event):
+                        AckTypeEvent = Event(self.logical_clock, self.pid, event.eid)
+                        AckTypeEvent.type_is_ack = True
+                        self.send_event(AckTypeEvent)
+                        self.acknowledge_receive[event.eid].add(event.pid)
+            except:
+                pass
 
     def check_ack_constraints(self, event):
         if self.acknowledge_receive and event.eid in self.acknowledge_receive:
@@ -115,7 +118,7 @@ class TotalOrderMultiCast:
     def send_event(self, event):
         #print("clock",self.logical_clock)
         if not event.type_is_ack:
-            self.logical_clock+=1
+            self.logical_clock+=1            
         
         event.logical_clock = self.logical_clock
         for port in self.port_list:
