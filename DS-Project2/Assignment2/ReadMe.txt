@@ -1,4 +1,4 @@
-This is based on Previous Assignment. So they may have repeated function names and some of the code
+This is based on my asg1.
 
 Please install xterm. It is available on Linux and on Mac
 

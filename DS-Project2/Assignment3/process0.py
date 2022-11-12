@@ -6,5 +6,5 @@ if __name__ == "__main__":
     port_num = 5432
     print(f"This is process: {process_name}")
     token0 = TokenRingAlgorithm(pid, port_num)
-    token0.initialize()
-    token0.connection_thread.join()
+    token0.start_process()
+    token0.communication_thread.join()
