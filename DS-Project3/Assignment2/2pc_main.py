@@ -1,30 +1,21 @@
-import random, socket, logging, time
+import random, socket, logging, time, pickle
 from threading import Thread, Semaphore, Lock
 
-_format = '%(participant)s:%(levelname)s ===> %(message)s'
-logging.basicConfig(format=_format)
+logging.basicConfig(format='%(participant)s:%(levelname)s ===> %(message)s')
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
-
-# Task 2: Need to add timeout -- 
-# Task 3: Need to add Socket
 
 NUM_OF_PARTICIPANTS = 3
 
 class coordinator_class(Thread):
-    def __init__(self):
+    def __init__(self, port_num):
         Thread.__init__(self)
         self.start_sem = Semaphore(0)
+        self.port_num = port_num
         self.participant_list = []
         self.votes = []
         self.acknowdgements = []
-        self._log_extra = dict(participant='coordinator')
-
-    def commit(self):
-        self.votes.append(True)
-
-    def abort(self):
-        self.votes.append(False)
+        self._log_extra = dict(participant='-- Coordinator --')
 
     def acknowdge(self):
         self.acknowdgements.append(True)
@@ -38,28 +29,47 @@ class coordinator_class(Thread):
         self.start_sem.acquire(NUM_OF_PARTICIPANTS)
 
         # Vote Phase:
+        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        server_socket.bind((socket.gethostname(),self.port_num))
+
         for participant in self.participant_list:
             LOG.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self._log_extra)
             participant.commit_query()
-
+            data = server_socket.recvfrom(1024)[0]
+            event = pickle.loads(data)
+            if event['vote']:
+                self.votes.append(True)
+            else:
+                self.votes.append(False)
+        server_socket.close()
         # Commit Phase:
         while len(self.votes) < NUM_OF_PARTICIPANTS:
             time.sleep(1)
             
+        send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
         if all(self.votes):
             LOG.debug('vote list {}'.format(self.votes), extra=self._log_extra)
             LOG.info('multicasting GLOBAL_COMMIT', extra=self._log_extra)
             for participant in self.participant_list:
-                participant.commit()
+                data = pickle.dumps({'decision':True})
+                
+                send_event_socket.sendto(data, (socket.gethostname(), participant.port_num))
+                participant.receive_decision()
+
         else:
-            # Abort Phase
             LOG.debug('vote list {}'.format(self.votes), extra=self._log_extra)
             LOG.info('multicasting GLOBAL_ABORT', extra=self._log_extra)
             for participant in self.participant_list:
-                participant.abort_ack()
+                data = pickle.dumps({'decision':False})
+                
+                send_event_socket.sendto(data, (socket.gethostname(), participant.port_num))
+                participant.receive_decision()  
+
+        send_event_socket.close()
 
         if all(self.acknowdgements):
-            LOG.info('END', extra=self._log_extra)
+            LOG.info('EXIT', extra=self._log_extra)
         else:
             LOG.error('error receiving an acknowdgement', extra=self._log_extra)
 
@@ -67,32 +77,46 @@ class coordinator_class(Thread):
             participant.end()
 
 class participant(Thread):
-    def __init__(self, p_name, coordinator):
+    def __init__(self, p_name, coordinator, port_num):
         Thread.__init__(self)
         self.p_name = p_name
+        self.port_num = port_num
         self.coordinator = coordinator
         self.transaction = None
         self.sem = Semaphore(0)
         self.lock = Lock()
         self.record = 1000
         self._log_extra = dict(participant=p_name)
+        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        self.server_socket.bind((socket.gethostname(),self.port_num))
 
     def commit_query(self):
-        # Vote phase:
-        # If all three participants commits, then transaction is commited
-        # If anyone of them aborts, transaction is aborted
+        #Voting phase
+        send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
         if self.res:
             LOG.info('VOTE_COMMIT', extra=self._log_extra)
-            self.coordinator.commit()
+            
+            data = pickle.dumps({'vote':True})
+            send_event_socket.sendto(data, (socket.gethostname(), self.coordinator.port_num))
+
         else:
             LOG.info('VOTE_ABORT', extra=self._log_extra)
-            self.coordinator.abort()
+            
+            data = pickle.dumps({'vote':False})
+            send_event_socket.sendto(data, (socket.gethostname(), self.coordinator.port_num))
 
-    def commit(self):
-        self.commit = True
+        send_event_socket.close()
 
-    def abort_ack(self):
-        self.commit = False
+    def receive_decision(self):
+        data = self.server_socket.recvfrom(1024)[0]
+        event = pickle.loads(data)
+        if event['decision']:
+            self.commit = True
+        else:
+            self.commit = False
+        self.server_socket.close()
 
     def end(self):
         self.sem.release()
@@ -100,41 +124,33 @@ class participant(Thread):
     def run(self):
         LOG.debug('Before Transaction content {}'.format(self.record), extra=self._log_extra)
 
-        #run and save
         self.lock.acquire()
-
-
 
         self.res = random.random() < 0.8
         #LOG.debug('Result {}'.format(self.res), extra=self._log_extra)
         self.coordinator.start_voting(self)
 
-        #LOG.debug('During Transaction content {}'.format(self.record), extra=self._log_extra)
-
         # waiting till the end of voting phase
         self.sem.acquire()
 
         if self.commit:
-            # Each participant commits
             self.transaction()
             LOG.info('Received GLOBAL_COMMIT', extra=self._log_extra)
         else:
-            # Each participant aborts
             LOG.info('Received GLOBAL_ABORT', extra=self._log_extra)
-        #releases all the acquired locks and resources
+
         self.lock.release()
 
-        #participant returns an acknowledgment to the coordinator
         self.coordinator.acknowdge()
 
         LOG.debug('After Transaction content {}'.format(self.record), extra=self._log_extra)
 
 
 if __name__ == '__main__':
-    coordinator = coordinator_class()
-    p1 = participant('participant1', coordinator)
-    p2 = participant('participant2', coordinator)
-    p3 = participant('participant3', coordinator)
+    coordinator = coordinator_class(5430)
+    p1 = participant('Participant 1', coordinator, 5431)
+    p2 = participant('Participant 2', coordinator, 5432)
+    p3 = participant('Participant 3', coordinator, 5433)
     update = random.randint(1, 100)
  
     def p1_run_transaction():
