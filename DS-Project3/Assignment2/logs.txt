@@ -1,0 +1,133 @@
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_COMMIT
+-- Coordinator --:DEBUG ===> vote list [True, True, True]
+-- Coordinator --:INFO ===> multicasting GLOBAL_COMMIT
+-- Coordinator --:INFO ===> EXIT
+Participant 2:INFO ===> Received GLOBAL_COMMIT
+Participant 2:DEBUG ===> After Transaction content 935
+Participant 1:INFO ===> Received GLOBAL_COMMIT
+Participant 1:DEBUG ===> After Transaction content 935
+Participant 3:INFO ===> Received GLOBAL_COMMIT
+Participant 3:DEBUG ===> After Transaction content 935
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_COMMIT
+-- Coordinator --:DEBUG ===> vote list [True, True, True]
+-- Coordinator --:INFO ===> multicasting GLOBAL_COMMIT
+-- Coordinator --:INFO ===> EXIT
+Participant 1:INFO ===> Received GLOBAL_COMMIT
+Participant 2:INFO ===> Received GLOBAL_COMMIT
+Participant 1:DEBUG ===> After Transaction content 956
+Participant 3:INFO ===> Received GLOBAL_COMMIT
+Participant 2:DEBUG ===> After Transaction content 956
+Participant 3:DEBUG ===> After Transaction content 956
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_ABORT
+-- Coordinator --:DEBUG ===> vote list [True, True, False]
+-- Coordinator --:INFO ===> multicasting GLOBAL_ABORT
+-- Coordinator --:INFO ===> EXIT
+Participant 2:INFO ===> Received GLOBAL_ABORT
+Participant 2:DEBUG ===> After Transaction content 1000
+Participant 3:INFO ===> Received GLOBAL_ABORT
+Participant 3:DEBUG ===> After Transaction content 1000
+Participant 1:INFO ===> Received GLOBAL_ABORT
+Participant 1:DEBUG ===> After Transaction content 1000
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_ABORT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_COMMIT
+-- Coordinator --:DEBUG ===> vote list [True, False, True]
+-- Coordinator --:INFO ===> multicasting GLOBAL_ABORT
+-- Coordinator --:INFO ===> EXIT
+Participant 1:INFO ===> Received GLOBAL_ABORT
+Participant 2:INFO ===> Received GLOBAL_ABORT
+Participant 2:DEBUG ===> After Transaction content 1000
+Participant 3:INFO ===> Received GLOBAL_ABORT
+Participant 1:DEBUG ===> After Transaction content 1000
+Participant 3:DEBUG ===> After Transaction content 1000
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_ABORT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_COMMIT
+-- Coordinator --:DEBUG ===> vote list [False, True, True]
+-- Coordinator --:INFO ===> multicasting GLOBAL_ABORT
+-- Coordinator --:INFO ===> EXIT
+Participant 1:INFO ===> Received GLOBAL_ABORT
+Participant 1:DEBUG ===> After Transaction content 1000
+Participant 3:INFO ===> Received GLOBAL_ABORT
+Participant 3:DEBUG ===> After Transaction content 1000
+Participant 2:INFO ===> Received GLOBAL_ABORT
+Participant 2:DEBUG ===> After Transaction content 1000
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_ABORT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_COMMIT
+-- Coordinator --:DEBUG ===> vote list [True, False, True]
+-- Coordinator --:INFO ===> multicasting GLOBAL_ABORT
+-- Coordinator --:INFO ===> EXIT
+Participant 3:INFO ===> Received GLOBAL_ABORT
+Participant 2:INFO ===> Received GLOBAL_ABORT
+Participant 1:INFO ===> Received GLOBAL_ABORT
+Participant 1:DEBUG ===> After Transaction content 1000
+Participant 2:DEBUG ===> After Transaction content 1000
+Participant 3:DEBUG ===> After Transaction content 1000
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------
+Participant 1:DEBUG ===> INIT - Before Transaction content 1000
+Participant 2:DEBUG ===> INIT - Before Transaction content 1000
+Participant 3:DEBUG ===> INIT - Before Transaction content 1000
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 1
+Participant 1:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 2
+Participant 2:INFO ===> VOTE_COMMIT
+-- Coordinator --:INFO ===> VOTE_REQUEST sent to Participant 3
+Participant 3:INFO ===> VOTE_COMMIT
+-- Coordinator --:DEBUG ===> vote list [True, True, True]
+-- Coordinator --:INFO ===> multicasting GLOBAL_COMMIT
+-- Coordinator --:INFO ===> EXIT
+Participant 3:INFO ===> Received GLOBAL_COMMIT
+Participant 2:INFO ===> Received GLOBAL_COMMIT
+Participant 1:INFO ===> Received GLOBAL_COMMIT
+Participant 3:DEBUG ===> After Transaction content 917
+Participant 2:DEBUG ===> After Transaction content 917
+Participant 1:DEBUG ===> After Transaction content 917
+-- Coordinator --:INFO ===> ---------- END OF TRANSACTION ----------

@@ -1,9 +1,11 @@
-import random, socket, logging, time, pickle
+import random, socket, logging, time, pickle, sys
 from threading import Semaphore, Thread, Lock
 
-logging.basicConfig(format='%(participant)s:%(levelname)s ===> %(message)s')
-LOG = logging.getLogger(__name__)
-LOG.setLevel(logging.DEBUG)
+logfile = 'logs.txt'
+logging.basicConfig(level=logging.DEBUG , 
+                    format='%(participant)s:%(levelname)s ===> %(message)s',
+                    handlers=[logging.FileHandler('logs.txt'),logging.StreamHandler(sys.stdout)])
+log = logging.getLogger(__name__)
 
 NUM_OF_PARTICIPANTS = 3
 
@@ -33,7 +35,7 @@ class coordinator_class(Thread):
         server_socket.bind((socket.gethostname(),self.port_num))
 
         for participant in self.participant_list:
-            LOG.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self.extra_logs)
+            log.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self.extra_logs)
             participant.send_p_vote()
             data = server_socket.recvfrom(1024)[0]
             event = pickle.loads(data)
@@ -48,8 +50,8 @@ class coordinator_class(Thread):
             
         send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
         if all(self.votes_list):
-            LOG.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
-            LOG.info('multicasting GLOBAL_COMMIT', extra=self.extra_logs)
+            log.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
+            log.info('multicasting GLOBAL_COMMIT', extra=self.extra_logs)
             for participant in self.participant_list:
                 data = pickle.dumps({'decision':True})
                 
@@ -57,8 +59,8 @@ class coordinator_class(Thread):
                 participant.receive_decision()
 
         else:
-            LOG.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
-            LOG.info('multicasting GLOBAL_ABORT', extra=self.extra_logs)
+            log.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
+            log.info('multicasting GLOBAL_ABORT', extra=self.extra_logs)
             for participant in self.participant_list:
                 data = pickle.dumps({'decision':False})
                 
@@ -68,9 +70,9 @@ class coordinator_class(Thread):
         send_event_socket.close()
 
         if all(self.acknowdgements):
-            LOG.info('EXIT', extra=self.extra_logs)
+            log.info('EXIT', extra=self.extra_logs)
         else:
-            LOG.error('acknowdgement not received', extra=self.extra_logs)
+            log.error('acknowdgement not received', extra=self.extra_logs)
 
         for participant in self.participant_list:
             participant.sem_release()
@@ -95,13 +97,13 @@ class participant(Thread):
         send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         if self.my_vote:
-            LOG.info('VOTE_COMMIT', extra=self.extra_logs)
+            log.info('VOTE_COMMIT', extra=self.extra_logs)
             
             data = pickle.dumps({'vote':True})
             send_event_socket.sendto(data, (socket.gethostname(), self.coordinator.port_num))
 
         else:
-            LOG.info('VOTE_ABORT', extra=self.extra_logs)
+            log.info('VOTE_ABORT', extra=self.extra_logs)
             
             data = pickle.dumps({'vote':False})
             send_event_socket.sendto(data, (socket.gethostname(), self.coordinator.port_num))
@@ -121,12 +123,12 @@ class participant(Thread):
         self.part_sem.release()
 
     def run(self):
-        LOG.debug('Before Transaction content {}'.format(self.record), extra=self.extra_logs)
+        log.debug('INIT - Before Transaction content {}'.format(self.record), extra=self.extra_logs)
 
         self.lock.acquire()
 
         self.my_vote = random.random() < 0.8
-        #LOG.debug('Result {}'.format(self.my_vote), extra=self.extra_logs)
+        #log.debug('Result {}'.format(self.my_vote), extra=self.extra_logs)
         self.coordinator.join_participant(self)
 
         # waiting untill voting phase is complete
@@ -134,15 +136,15 @@ class participant(Thread):
 
         if self.commit:
             self.transaction()
-            LOG.info('Received GLOBAL_COMMIT', extra=self.extra_logs)
+            log.info('Received GLOBAL_COMMIT', extra=self.extra_logs)
         else:
-            LOG.info('Received GLOBAL_ABORT', extra=self.extra_logs)
+            log.info('Received GLOBAL_ABORT', extra=self.extra_logs)
 
         self.lock.release()
 
         self.coordinator.acknowdge()
 
-        LOG.debug('After Transaction content {}'.format(self.record), extra=self.extra_logs)
+        log.debug('After Transaction content {}'.format(self.record), extra=self.extra_logs)
 
 
 if __name__ == '__main__':
@@ -177,3 +179,5 @@ if __name__ == '__main__':
     p1.join()
     p2.join()
     p3.join()
+
+log.info('---------- END OF TRANSACTION ----------', extra=coordinator.extra_logs)
