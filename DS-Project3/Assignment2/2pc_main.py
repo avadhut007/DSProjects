@@ -1,13 +1,13 @@
-import random, logging, time
+import random, socket, logging, time
 from threading import Thread, Semaphore, Lock
 
-
-_format = '%(participant)s:%(levelname)s --> %(message)s'
+_format = '%(participant)s:%(levelname)s ===> %(message)s'
 logging.basicConfig(format=_format)
 LOG = logging.getLogger(__name__)
 LOG.setLevel(logging.DEBUG)
 
 # Task 2: Need to add timeout -- 
+# Task 3: Need to add Socket
 
 NUM_OF_PARTICIPANTS = 3
 
@@ -39,7 +39,7 @@ class coordinator_class(Thread):
 
         # Vote Phase:
         for participant in self.participant_list:
-            LOG.info('commiting_to {}'.format(participant.p_name), extra=self._log_extra)
+            LOG.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self._log_extra)
             participant.commit_query()
 
         # Commit Phase:
@@ -48,13 +48,13 @@ class coordinator_class(Thread):
             
         if all(self.votes):
             LOG.debug('vote list {}'.format(self.votes), extra=self._log_extra)
-            LOG.info('Committing', extra=self._log_extra)
+            LOG.info('multicasting GLOBAL_COMMIT', extra=self._log_extra)
             for participant in self.participant_list:
                 participant.commit()
         else:
             # Abort Phase
             LOG.debug('vote list {}'.format(self.votes), extra=self._log_extra)
-            LOG.warning('Rolling back', extra=self._log_extra)
+            LOG.info('multicasting GLOBAL_ABORT', extra=self._log_extra)
             for participant in self.participant_list:
                 participant.abort_ack()
 
@@ -71,8 +71,7 @@ class participant(Thread):
         Thread.__init__(self)
         self.p_name = p_name
         self.coordinator = coordinator
-        self.do = None
-        self.undo = None
+        self.transaction = None
         self.sem = Semaphore(0)
         self.lock = Lock()
         self.record = 1000
@@ -99,38 +98,36 @@ class participant(Thread):
         self.sem.release()
 
     def run(self):
-        LOG.debug('Before Transaction STATE {}'.format(self.record), extra=self._log_extra)
+        LOG.debug('Before Transaction content {}'.format(self.record), extra=self._log_extra)
 
         #run and save
         self.lock.acquire()
 
-        for do in self.do:
-            do()
+
 
         self.res = random.random() < 0.8
         #LOG.debug('Result {}'.format(self.res), extra=self._log_extra)
         self.coordinator.start_voting(self)
 
-        LOG.debug('DURING STATE {}'.format(self.record), extra=self._log_extra)
+        #LOG.debug('During Transaction content {}'.format(self.record), extra=self._log_extra)
 
         # waiting till the end of voting phase
         self.sem.acquire()
 
         if self.commit:
             # Each participant commits
-            LOG.info('GLOBAL_COMMIT', extra=self._log_extra)
+            self.transaction()
+            LOG.info('Received GLOBAL_COMMIT', extra=self._log_extra)
         else:
             # Each participant aborts
-            for undo in self.undo:
-                undo()
-            LOG.info('GLOBAL_ABORT', extra=self._log_extra)
+            LOG.info('Received GLOBAL_ABORT', extra=self._log_extra)
         #releases all the acquired locks and resources
         self.lock.release()
 
         #participant returns an acknowledgment to the coordinator
         self.coordinator.acknowdge()
 
-        LOG.debug('After Transaction STATE {}'.format(self.record), extra=self._log_extra)
+        LOG.debug('After Transaction content {}'.format(self.record), extra=self._log_extra)
 
 
 if __name__ == '__main__':
@@ -138,32 +135,20 @@ if __name__ == '__main__':
     p1 = participant('participant1', coordinator)
     p2 = participant('participant2', coordinator)
     p3 = participant('participant3', coordinator)
-    count = random.randint(1, 100)
+    update = random.randint(1, 100)
  
-    def p1_do():
-        p1.record -= count
+    def p1_run_transaction():
+        p1.record -= update
 
-    def p1_undo():
-        p1.record += count
+    def p2_run_transaction():
+        p2.record -= update
+  
+    def p3_run_transaction():
+        p3.record -= update
 
-    def p2_do():
-        p2.record -= count
-
-    def p2_undo():
-        p2.record += count
-        
-    def p3_do():
-        p3.record -= count
-
-    def p3_undo():
-        p3.record += count
-
-    p1.do = [p1_do, ]
-    p2.do = [p2_do, ]
-    p3.do = [p3_do, ]
-    p1.undo = [p1_undo, ]
-    p2.undo = [p2_undo, ]
-    p3.undo = [p3_undo, ]
+    p1.transaction = p1_run_transaction
+    p2.transaction = p2_run_transaction
+    p3.transaction = p3_run_transaction
 
     coordinator.start()
     p1.start()
