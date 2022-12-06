@@ -1,4 +1,4 @@
-import random, socket, logging, time, pickle, sys
+import socket, logging, random, time, pickle, sys
 from threading import Semaphore, Thread, Lock
 
 logfile = 'logs.txt'
