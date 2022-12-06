@@ -28,7 +28,6 @@ class coordinator_class(Thread):
         time.sleep(0.5)
         self.cod_sem.acquire(NUM_OF_PARTICIPANTS)
 
-        # Vote Phase:
         server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         server_socket.bind((socket.gethostname(),self.port_num))
@@ -43,7 +42,7 @@ class coordinator_class(Thread):
             else:
                 self.votes_list.append(False)
         server_socket.close()
-        # Commit Phase:
+        
         while len(self.votes_list) < NUM_OF_PARTICIPANTS:
             time.sleep(1)
             
@@ -130,7 +129,7 @@ class participant(Thread):
         #LOG.debug('Result {}'.format(self.my_vote), extra=self.extra_logs)
         self.coordinator.join_participant(self)
 
-        # waiting till the end of voting phase
+        # waiting untill voting phase is complete
         self.part_sem.acquire()
 
         if self.commit:
@@ -147,7 +146,7 @@ class participant(Thread):
 
 
 if __name__ == '__main__':
-    
+
     coordinator = coordinator_class(5430)
     
     p1 = participant('Participant 1', coordinator, 5431)
