@@ -93,7 +93,7 @@ class participant(Thread):
         self.server_socket.bind((socket.gethostname(),self.port_num))
 
     def send_p_vote(self):
-        #Voting phase
+        # vote request
         send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
 
         if self.my_vote:
