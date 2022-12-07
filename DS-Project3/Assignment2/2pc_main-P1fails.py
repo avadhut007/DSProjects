@@ -18,6 +18,7 @@ class coordinator_class(Thread):
         self.participant_list = []
         self.votes_list = []
         self.extra_logs = dict(participant='-- Coordinator --')
+        self.start_time = time.time()
 
     def join_participant(self, participant):
         self.participant_list.append(participant)
@@ -29,28 +30,35 @@ class coordinator_class(Thread):
     def run(self):
         time.sleep(0.5)
         self.cod_sem.acquire(NUM_OF_PARTICIPANTS)
-
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        server_socket.bind((socket.gethostname(),self.port_num))
-
-        for participant in self.participant_list:
-            log.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self.extra_logs)
-            participant.send_p_vote()
-            data = server_socket.recvfrom(1024)[0]
-            event = pickle.loads(data)
-            if event['vote']:
-                self.votes_list.append(True)
-            else:
-                self.votes_list.append(False)
-        server_socket.close()
+        try:
+            server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+            server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+            server_socket.bind((socket.gethostname(),self.port_num))
+            server_socket.settimeout(1)
+            for participant in self.participant_list:
+                log.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self.extra_logs)
+                participant.send_p_vote()
+                data = server_socket.recvfrom(1024)[0]
+                event = pickle.loads(data)
+                if event['vote']:
+                    self.votes_list.append(True)
+                else:
+                    self.votes_list.append(False)
+            
+        except:
+            server_socket.close()
         
         while len(self.votes_list) < NUM_OF_PARTICIPANTS:
             time.sleep(1)
-            
-        send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)    
+            curr_time = time.time() - self.start_time
+            if curr_time > 1:
+                break
+        send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+        if len(self.votes_list) < NUM_OF_PARTICIPANTS:
+            self.votes_list.append(False) 
         if all(self.votes_list):
-            log.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
+            #log.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
             log.info('multicasting GLOBAL_COMMIT', extra=self.extra_logs)
             for participant in self.participant_list:
                 data = pickle.dumps({'decision':True})
@@ -78,7 +86,7 @@ class coordinator_class(Thread):
             participant.sem_release()
 
 class participant(Thread):
-    def __init__(self, p_name, coordinator, port_num):
+    def __init__(self, p_name, coordinator, port_num, sleep_time = 0):
         Thread.__init__(self)
         self.p_name = p_name
         self.port_num = port_num
@@ -88,6 +96,8 @@ class participant(Thread):
         self.lock = Lock()
         self.record = 1000
         self.extra_logs = dict(participant=p_name)
+        self.start_time = time.time()
+        self.sleep_time = sleep_time
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((socket.gethostname(),self.port_num))
@@ -95,7 +105,10 @@ class participant(Thread):
     def send_p_vote(self):
         # vote request
         send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-
+        time.sleep(self.sleep_time)
+        if self.p_name == 'Participant 1':
+            log.info('Could not vote due to failure', extra=self.extra_logs)
+            return
         if self.my_vote:
             log.info('VOTE_COMMIT', extra=self.extra_logs)
             
@@ -151,7 +164,7 @@ if __name__ == '__main__':
 
     coordinator = coordinator_class(5430)
     
-    p1 = participant('Participant 1', coordinator, 5431)
+    p1 = participant('Participant 1', coordinator, 5431, 1)
     p2 = participant('Participant 2', coordinator, 5432)
     p3 = participant('Participant 3', coordinator, 5433)
     
@@ -181,3 +194,5 @@ if __name__ == '__main__':
     p3.join()
 
 log.info('---------- END OF TRANSACTION ----------', extra=coordinator.extra_logs)
+log.debug('total time= {}'.format(time.time()-p1.start_time), extra=coordinator.extra_logs)
+print()
