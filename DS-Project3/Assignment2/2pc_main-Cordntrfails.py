@@ -10,7 +10,7 @@ log = logging.getLogger(__name__)
 NUM_OF_PARTICIPANTS = 3
 
 class coordinator_class(Thread):
-    def __init__(self, port_num):
+    def __init__(self, port_num, sleep_time = 0):
         Thread.__init__(self)
         self.cod_sem = Semaphore(0)
         self.port_num = port_num
@@ -19,6 +19,7 @@ class coordinator_class(Thread):
         self.votes_list = []
         self.extra_logs = dict(participant='-- Coordinator --')
         self.start_time = time.time()
+        self.sleep_time = sleep_time
 
     def join_participant(self, participant):
         self.participant_list.append(participant)
@@ -34,7 +35,7 @@ class coordinator_class(Thread):
             server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             server_socket.bind((socket.gethostname(),self.port_num))
-            server_socket.settimeout(1)
+            server_socket.settimeout(2)
             for participant in self.participant_list:
                 log.info('VOTE_REQUEST sent to {}'.format(participant.p_name), extra=self.extra_logs)
                 participant.send_p_vote()
@@ -44,9 +45,10 @@ class coordinator_class(Thread):
                     self.votes_list.append(True)
                 else:
                     self.votes_list.append(False)
-            
+            server_socket.close()
         except:
             server_socket.close()
+            log.info('Coordinator Failed during Voting', extra=self.extra_logs)
         
         while len(self.votes_list) < NUM_OF_PARTICIPANTS:
             time.sleep(1)
@@ -68,7 +70,7 @@ class coordinator_class(Thread):
 
         else:
             #log.debug('vote list {}'.format(self.votes_list), extra=self.extra_logs)
-            log.info('multicasting GLOBAL_ABORT', extra=self.extra_logs)
+            log.info('multicasting GLOBAL_ABORT due to timeout', extra=self.extra_logs)
             for participant in self.participant_list:
                 data = pickle.dumps({'decision':False})
                 
@@ -86,7 +88,7 @@ class coordinator_class(Thread):
             participant.sem_release()
 
 class participant(Thread):
-    def __init__(self, p_name, coordinator, port_num, sleep_time = 0):
+    def __init__(self, p_name, coordinator, port_num):
         Thread.__init__(self)
         self.p_name = p_name
         self.port_num = port_num
@@ -97,7 +99,7 @@ class participant(Thread):
         self.record = 1000
         self.extra_logs = dict(participant=p_name)
         self.start_time = time.time()
-        self.sleep_time = sleep_time
+
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
         self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind((socket.gethostname(),self.port_num))
@@ -105,9 +107,9 @@ class participant(Thread):
     def send_p_vote(self):
         # vote request
         send_event_socket = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-        time.sleep(self.sleep_time)
-        if self.p_name == 'Participant 1':
-            log.info('Could not vote due to failure', extra=self.extra_logs)
+        
+        if self.p_name:
+            log.info('Could not send vote due to Coordinator failure', extra=self.extra_logs)
             return
         if self.my_vote:
             log.info('VOTE_COMMIT', extra=self.extra_logs)
@@ -162,9 +164,9 @@ class participant(Thread):
 
 if __name__ == '__main__':
 
-    coordinator = coordinator_class(5430)
+    coordinator = coordinator_class(5430, 1)
     
-    p1 = participant('Participant 1', coordinator, 5431, 1)
+    p1 = participant('Participant 1', coordinator, 5431)
     p2 = participant('Participant 2', coordinator, 5432)
     p3 = participant('Participant 3', coordinator, 5433)
     
